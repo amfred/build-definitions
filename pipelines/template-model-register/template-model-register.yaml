@@ -18,8 +18,8 @@ spec:
     - description: 'Fully Qualified Output Container Image'
       name: output-image
       type: string
-    - description: 'Fully Qualified Output OCI Artifact'
-      name: output-oci
+    - description: 'Fully Qualified Output ModelCar'
+      name: output-modelcar
       type: string
     - description: Path to the model data within the git repo.
       name: path-context
@@ -29,7 +29,7 @@ spec:
       name: dockerfile
       type: string
       default: Dockerfile
-    - description: Force rebuild of the container image and OCI artifact
+    - description: Force rebuild of the container image and ModelCar
       name: rebuild
       type: string
       default: "false"
@@ -52,8 +52,8 @@ spec:
       description: Build a container image.
       type: string
       default: "false"
-    - name: build-oci
-      description: Build an OCI artifact that is not a container image.
+    - name: build-modelcar
+      description: Build a KubeFlow ModelCar
       type: string
       default: "false"
   tasks:
@@ -61,8 +61,8 @@ spec:
       params:
         - name: image-url
           value: "$(params.output-image)"
-        - name: oci-url
-          value: "$(params.output-oci)"
+        - name: modelcar-url
+          value: "$(params.output-modelcar)"
         - name: rebuild
           value: "$(params.rebuild)"
         - name: skip-checks
@@ -123,12 +123,12 @@ spec:
       workspaces:
         - name: source
           workspace: workspace
-    - name: build-oci
+    - name: build-modelcar
       when:
         - input: $(tasks.init.results.build)
           operator: in
           values: ["true"]
-        - input: $(params.build-oci)
+        - input: $(params.build-modelcar)
           operator: in
           values: ["true"]
       runAfter:
@@ -137,8 +137,8 @@ spec:
         name: oci-copy
         version: "0.1"
       params:
-        - name: BINARY_OCI
-          value: "$(params.output-oci)"
+        - name: BINARY_MODELCAR
+          value: "$(params.output-modelcar)"
       workspaces:
         - name: workspace
           workspace: workspace
@@ -246,13 +246,13 @@ spec:
         value: $(tasks.build-container.results.IMAGE_URL)
     - name: apply-tags
       runAfter:
-        - build-oci
+        - build-modelcar
       taskRef:
         name: apply-tags
         version: "0.1"
       params:
       - name: IMAGE
-        value: $(tasks.build-oci.results.OCI_URL)
+        value: $(tasks.build-modelcar.results.MODELCAR_URL)
 
   finally:
     - name: show-sbom
@@ -283,10 +283,10 @@ spec:
       value: "$(tasks.build-container.results.IMAGE_URL)"
     - name: IMAGE_DIGEST
       value: "$(tasks.build-container.results.IMAGE_DIGEST)"
-    - name: OCI_URL
-      value: "$(tasks.build-oci.results.OCI_URL)"
-    - name: OCI_DIGEST
-      value: "$(tasks.build-oci.results.OCI_DIGEST)"
+    - name: MODELCAR_URL
+      value: "$(tasks.build-modelcar.results.MODELCAR_URL)"
+    - name: MODELCAR_DIGEST
+      value: "$(tasks.build-modelcar.results.MODELCAR_DIGEST)"
     - name: CHAINS-GIT_URL
       value: "$(tasks.clone-repository.results.url)"
     - name: CHAINS-GIT_COMMIT
